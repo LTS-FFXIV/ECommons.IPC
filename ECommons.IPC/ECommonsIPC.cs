@@ -2,7 +2,6 @@
 using ECommons.IPC.Subscribers.AutoRetainer;
 using ECommons.IPC.Subscribers.BossMod;
 using ECommons.IPC.Subscribers.Dropbox;
-using ECommons.IPC.Subscribers.LifestreamIPC;
 using ECommons.IPC.Subscribers.Questionable;
 using ECommons.IPC.Subscribers.Teleporter;
 using ECommons.IPC.Subscribers.TextAdvance;
@@ -23,6 +22,7 @@ using ECommons.IPC.Subscribers.GlamourLog;
 using ECommons.IPC.Subscribers.Battlevest;
 using ECommons.IPC.Subscribers.Splatoon;
 using ECommons.IPC.Subscribers.SomethingNeedDoing;
+using ECommons.IPC.Subscribers.Lifestream;
 
 namespace ECommons.IPC;
 

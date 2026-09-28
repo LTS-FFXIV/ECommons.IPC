@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommons.IPC.Subscribers.LifestreamIPC;
+namespace ECommons.IPC.Subscribers.Lifestream;
 
 public class HousePathData
 {

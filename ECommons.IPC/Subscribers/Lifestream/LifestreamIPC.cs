@@ -2,12 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using static ECommons.IPC.Subscribers.LifestreamIPC.LifestreamIPC.Delegates;
+using static ECommons.IPC.Subscribers.Lifestream.LifestreamIPC.Delegates;
 using AddressBookEntryTuple = (string Name, int World, int City, int Ward, int PropertyType, int Plot, int Apartment, bool ApartmentSubdivision, bool AliasEnabled, string Alias);
 
-namespace ECommons.IPC.Subscribers.LifestreamIPC;
+namespace ECommons.IPC.Subscribers.Lifestream;
 
-public sealed class LifestreamIPC : IPCBase
+public sealed partial class LifestreamIPC : IPCBase
 {
     public LifestreamIPC()
     {
@@ -173,9 +173,12 @@ public sealed class LifestreamIPC : IPCBase
     [EzIPC("ChangeCharacterAndTravel")]
     public Func<string, string, string, ErrorCode> ChangeCharacterAndTravel { get; private set; }
 
-    [EzIPC("Logout")] 
+    [EzIPC("Logout")]
     public Func<ErrorCode> Logout { get; private set; }
 
     [EzIPC("Abort")]
     public Action Abort { get; private set; }
+
+    [EzIPC("FindCustomAliasByCommand")]
+    public Func<CustomAlias> FindCustomAliasByCommand;
 }

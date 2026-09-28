@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommons.IPC.Subscribers.LifestreamIPC;
+namespace ECommons.IPC.Subscribers.Lifestream;
 
 public enum WorldChangeAetheryte
 {
