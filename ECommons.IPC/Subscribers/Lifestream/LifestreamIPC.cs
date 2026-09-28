@@ -180,5 +180,5 @@ public sealed partial class LifestreamIPC : IPCBase
     public Action Abort { get; private set; }
 
     [EzIPC("FindCustomAliasByCommand")]
-    public Func<CustomAlias> FindCustomAliasByCommand;
+    public Func<string, CustomAlias> FindCustomAliasByCommand;
 }
