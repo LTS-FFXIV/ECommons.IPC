@@ -1,4 +1,5 @@
 ﻿using ECommons.EzIpcManager;
+using System;
 using System.ComponentModel;
 using static ECommons.IPC.Subscribers.RotationSolverReborn.RotationSolverRebornIPC.Delegates;
 
@@ -82,6 +83,24 @@ public sealed class RotationSolverRebornIPC : IPCBase
 		/// </summary>
 		[Description("Farthest")]
 		Farthest,
+
+		/// <summary>
+		/// PVP: Find the nearest Healer.
+		/// </summary>
+		[Description("Focus Healers in PvP")]
+		PvPHealers,
+
+		/// <summary>
+		/// PVP: Find the nearest Tank.
+		/// </summary>
+		[Description("Focus Tanks in PvP")]
+		PvPTanks,
+
+		/// <summary>
+		/// PVP: Find the nearest DPS.
+		/// </summary>
+		[Description("Focus DPS in PvP")]
+		PvPDPS
 	}
 
 	/// <summary>
@@ -111,7 +130,60 @@ public sealed class RotationSolverRebornIPC : IPCBase
 		/// All targets when solo, or previously engaged.
 		/// </summary>
 		[Description("All targets when solo, or previously engaged.")]
-		AllTargetsWhenSolo
+		AllTargetsWhenSolo,
+
+		/// <summary>
+		/// Solo Deep Dungeons: out of combat pull the nearest single enemy; in combat only previously engaged.
+		/// </summary>
+		[Description("Solo Deep Dungeons: if solo, out of combat pull the nearest single enemy; in combat only previously engaged.")]
+		SoloDeepDungeonSmart,
+	}
+
+	/// <summary>
+	/// How an IPC caller wants a boolean setting handled while the operating mode it requested is active.
+	/// </summary>
+	public enum SettingOverride : byte
+	{
+		/// <summary>
+		/// Keep the user's own setting.
+		/// </summary>
+		UseSetting,
+
+		/// <summary>
+		/// Force the setting off.
+		/// </summary>
+		ForceOff,
+
+		/// <summary>
+		/// Force the setting on.
+		/// </summary>
+		ForceOn,
+	}
+
+	/// <summary>
+	/// Represents the positional relationship of an enemy.
+	/// </summary>
+	public enum EnemyPositional : byte
+	{
+		/// <summary>
+		/// No specific positional relationship.
+		/// </summary>
+		None,
+
+		/// <summary>
+		/// In the rear of the enemy.
+		/// </summary>
+		Rear,
+
+		/// <summary>
+		/// In the flank of the enemy.
+		/// </summary>
+		Flank,
+
+		/// <summary>
+		/// In front of the enemy.
+		/// </summary>
+		Front,
 	}
 
 	/// <summary>
@@ -305,6 +377,18 @@ public sealed class RotationSolverRebornIPC : IPCBase
 		/// </summary>
 		[Description("Cycles between states following settings in Target > Configuration.")]
 		Cycle,
+
+		/// <summary>
+		/// Open the autorotation state window with the Auto, Manual and Off buttons.
+		/// </summary>
+		[Description("Open the autorotation state window with the Auto, Manual and Off buttons.")]
+		Control,
+
+		/// <summary>
+		/// Open the update notes.
+		/// </summary>
+		[Description("Open the update notes.")]
+		Changelog,
 	}
 
 	/// <summary>
@@ -356,6 +440,16 @@ public sealed class RotationSolverRebornIPC : IPCBase
     [EzIPC] public ChangeOperatingModeDelegate ChangeOperatingMode { get; private set; }
 
     /// <summary>
+    /// Changes RotationSolver's operating state and temporarily overrides some settings without changing the user's config.
+    /// The overrides are cleared by any later state change, including RSR turning Off (manually, from a timeout, or via IPC).
+    /// </summary>
+    /// <remarks>
+    /// Delegate signature: <see cref="RotationSolverRebornIPC.Delegates.ChangeOperatingModeWithOverridesDelegate"/> (<see cref="RotationSolverRebornIPC.StateCommandType"/> <c>stateCommand</c>, <see cref="RotationSolverRebornIPC.TargetHostileType"/> <c>targetHostileType</c>, <see cref="RotationSolverRebornIPC.SettingOverride"/> <c>targetFreely</c>, <see cref="RotationSolverRebornIPC.SettingOverride"/> <c>autoOffAfterCombat</c>, <see cref="RotationSolverRebornIPC.SettingOverride"/> <c>friendlyPartyNpcHealRaise</c>).
+    /// <c>autoOffAfterCombat</c> has no effect in AutoDuty and Henched modes, which never turn off after combat.
+    /// </remarks>
+    [EzIPC] public ChangeOperatingModeWithOverridesDelegate ChangeOperatingModeWithOverrides { get; private set; }
+
+    /// <summary>
     /// Changes operating state and targeting rule, typically used by Autoduty integrations.
     /// </summary>
     /// <remarks>
@@ -364,12 +458,30 @@ public sealed class RotationSolverRebornIPC : IPCBase
     [EzIPC] public AutodutyChangeOperatingModeDelegate AutodutyChangeOperatingMode { get; private set; }
 
     /// <summary>
+    /// Same as <see cref="AutodutyChangeOperatingMode"/>, but also temporarily overrides some settings without changing the user's config.
+    /// The overrides are cleared by any later state change, including RSR turning Off (manually, from a timeout, or via IPC).
+    /// </summary>
+    /// <remarks>
+    /// Delegate signature: <see cref="RotationSolverRebornIPC.Delegates.AutodutyChangeOperatingModeWithOverridesDelegate"/> (<see cref="RotationSolverRebornIPC.StateCommandType"/> <c>stateCommand</c>, <see cref="RotationSolverRebornIPC.TargetingType"/> <c>targetingType</c>, <see cref="RotationSolverRebornIPC.TargetHostileType"/> <c>targetHostileType</c>, <see cref="RotationSolverRebornIPC.SettingOverride"/> <c>targetFreely</c>, <see cref="RotationSolverRebornIPC.SettingOverride"/> <c>autoOffAfterCombat</c>, <see cref="RotationSolverRebornIPC.SettingOverride"/> <c>friendlyPartyNpcHealRaise</c>).
+    /// <c>autoOffAfterCombat</c> has no effect in AutoDuty and Henched modes, which never turn off after combat.
+    /// </remarks>
+    [EzIPC] public AutodutyChangeOperatingModeWithOverridesDelegate AutodutyChangeOperatingModeWithOverrides { get; private set; }
+
+    /// <summary>
     /// Triggers a special state window (e.g., healing, movement, burst).
     /// </summary>
     /// <remarks>
     /// Delegate signature: <see cref="RotationSolverRebornIPC.Delegates.TriggerSpecialStateDelegate"/> (<see cref="RotationSolverRebornIPC.SpecialCommandType"/> <c>specialCommand</c>).
     /// </remarks>
     [EzIPC] public TriggerSpecialStateDelegate TriggerSpecialState { get; private set; }
+
+    /// <summary>
+    /// Triggers a special state window with a specific duration, overriding the configured default.
+    /// </summary>
+    /// <remarks>
+    /// Delegate signature: <see cref="RotationSolverRebornIPC.Delegates.TriggerSpecialStateWithDurationDelegate"/> (<see cref="RotationSolverRebornIPC.SpecialCommandType"/> <c>specialCommand</c>, float <c>duration</c> in seconds).
+    /// </remarks>
+    [EzIPC] public TriggerSpecialStateWithDurationDelegate TriggerSpecialStateWithDuration { get; private set; }
 
     /// <summary>
     /// Executes an auxiliary command or opens a RotationSolver UI panel.
@@ -387,6 +499,31 @@ public sealed class RotationSolverRebornIPC : IPCBase
     /// </remarks>
     [EzIPC] public ActionCommandDelegate ActionCommand { get; private set; }
 
+    /// <summary>
+    /// Temporarily enables the TargetFreely behaviour without changing the user's config.
+    /// Call <see cref="DisableTargetFreelyOverride"/> to revert.
+    /// </summary>
+    [EzIPC] public Action EnableTargetFreelyOverride { get; private set; }
+
+    /// <summary>
+    /// Disables the IPC-driven TargetFreely override, restoring normal config-based behaviour.
+    /// </summary>
+    [EzIPC] public Action DisableTargetFreelyOverride { get; private set; }
+
+    /// <summary>
+    /// Gets the enemy positional that RotationSolver currently intends to use for its next GCD action.
+    /// </summary>
+    /// <remarks>
+    /// Returns the underlying byte value of <see cref="RotationSolverRebornIPC.EnemyPositional"/>:
+    /// 0 = None, 1 = Rear, 2 = Flank, 3 = Front.
+    /// </remarks>
+    [EzIPC] public Func<byte> GetDesiredPositional { get; private set; }
+
+    /// <summary>
+    /// Returns whether RotationSolver's autorotation is currently active.
+    /// </summary>
+    [EzIPC] public Func<bool> AutorotationActive { get; private set; }
+
 	public static class Delegates
 	{
 		public delegate void TestDelegate(string param);
@@ -395,9 +532,15 @@ public sealed class RotationSolverRebornIPC : IPCBase
 
 		public delegate void ChangeOperatingModeDelegate(StateCommandType stateCommand);
 
+		public delegate void ChangeOperatingModeWithOverridesDelegate(StateCommandType stateCommand, TargetHostileType targetHostileType, SettingOverride targetFreely, SettingOverride autoOffAfterCombat, SettingOverride friendlyPartyNpcHealRaise);
+
 		public delegate void AutodutyChangeOperatingModeDelegate(StateCommandType stateCommand, TargetingType targetingType);
 
+		public delegate void AutodutyChangeOperatingModeWithOverridesDelegate(StateCommandType stateCommand, TargetingType targetingType, TargetHostileType targetHostileType, SettingOverride targetFreely, SettingOverride autoOffAfterCombat, SettingOverride friendlyPartyNpcHealRaise);
+
 		public delegate void TriggerSpecialStateDelegate(SpecialCommandType specialCommand);
+
+		public delegate void TriggerSpecialStateWithDurationDelegate(SpecialCommandType specialCommand, float duration);
 
 		public delegate void OtherCommandDelegate(OtherCommandType otherType, string str);
 
